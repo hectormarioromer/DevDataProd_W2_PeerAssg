@@ -1,5 +1,5 @@
 ---
-title: "Tourism in America"
+title: "Tourism Expenditure (millions of US Dollars)"
 author: "Hector Mario Romer"
 date: "2/25/2022"
 output: html_document
@@ -7,21 +7,45 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(leaflet))
 ```
 
 
 ## Overview
 
+In this project, I will be creating a web page using R markdown featuring a map created with Leaflet. I will use a file with tourism data downloaded from the United Nations data repository. 
+
+The plot will represent tourism expenditure in millions of dollars for the year 2019 per country. This information will be matched to a data file with the average latitude and longitude for each country, so we can plot the information for each country in the map. For the purposes of simplicity, we are going to assume that the data files exists in the working directory.
 
 ## Loading data
 
 ```{r}
-tourism <- read_csv("Tourism.csv", skip = 1, col_types = "fffffcncf")
+tourism <- read_csv("tourism.csv", skip = 1, col_types = "fffffcncf",
+                    na = c("", "NA"), show_col_types = FALSE)
+countries <- read_csv("country_lat_lng.csv", show_col_types = FALSE)
+
+info <- tourism %>% filter(year == 2019, 
+                series == "Tourism expenditure (millions of US dollars)") %>%
+                select(name, value) %>%
+                inner_join(countries, by = c("name" = "Country"))
 
 ```
 
 
 ## Plotting map
 
+Information is plotted using circle markers. The variable value (multiplied by 3.5 to make it bigger) is assigned to the radius. The bigger the tourism expenditure value, the bigger the circle. The circle is then placed at the average latitude and longitude for the country. Clicking on the circle pop ups a message with the value. 
+
+```{r Leaflet}
+
+map <-  leaflet(info) %>%
+        addTiles() %>%
+        setView(lng = 9, lat = 53, zoom = 3) %>%
+        addCircles(lng = ~Longitude, lat = ~Latitude, weight = 1, 
+                   radius = ~value*3.5, popup = ~as.character(value))
+map
+```
 
